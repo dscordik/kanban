@@ -1,21 +1,22 @@
 import * as React from "react";
 import {Link, NavLink, useNavigate} from "react-router-dom";
-import {LOGIN_PATH, PROFILE_PATH, REGISTER_PATH, SERVICES_PATH} from "../../config/routes";
+import {BOARDS_PATH, LOGIN_PATH, REGISTER_PATH} from "../../config/routes";
 import "./Header.css";
 import {Button} from "../Button/Button";
 import {useAuth} from "../../../Entities/session";
+import {queryClient} from "../../lib/query-client";
 
 function getLinkClass({isActive}: {isActive: boolean}) {
     return `site-nav__link${isActive ? ' site-nav__link--active' : ''}`
 }
 
-export const Header:React.FC= () => {
+export const Header: React.FC = () => {
     const {user, logout} = useAuth()
-    const isAuth = Boolean(user)
     const navigate = useNavigate();
 
     function handleLogout() {
         logout();
+        queryClient.clear()
         navigate(LOGIN_PATH);
     }
 
@@ -24,16 +25,16 @@ export const Header:React.FC= () => {
             <div className="site-header__inner">
                 <span className="site-header__brand">Misha`s Kanban</span>
                 <nav className="site-nav">
-                    {!isAuth ? (
+                    {user ? (
                         <>
-                            <NavLink className={getLinkClass} to={LOGIN_PATH}>Войти</NavLink>
-                            <Link className="button button--primary button--sm" to={REGISTER_PATH}>Регистрация</Link>
+                            <NavLink className={getLinkClass} to={BOARDS_PATH}>Мои доски</NavLink>
+                            <span className="site-nav__user">{user.first_name || user.email}</span>
+                            <Button className="site-nav__logout" variant="secondary" size="sm" onClick={handleLogout}>Выйти</Button>
                         </>
                     ) : (
                         <>
-                            <NavLink className={getLinkClass} to={SERVICES_PATH}>Мои доски</NavLink>
-                            <NavLink className={getLinkClass} to={PROFILE_PATH}>Профиль</NavLink>
-                            <Button className="site-nav__logout" variant="secondary" size="sm" onClick={handleLogout}>Выйти</Button>
+                            <NavLink className={getLinkClass} to={LOGIN_PATH}>Войти</NavLink>
+                            <Link className="button button--primary button--sm" to={REGISTER_PATH}>Регистрация</Link>
                         </>
                     )}
                 </nav>

@@ -1,32 +1,20 @@
-import {createBrowserRouter} from "react-router-dom";
-import {
-    ADMIN_BOOKINGS_PATH,
-    ADMIN_SERVICES_PATH, ADMIN_SLOTS_PATH,
-    HOME_PATH,
-    LOGIN_PATH,
-    MY_BOOKINGS_PATH,
-    PROFILE_PATH,
-    REGISTER_PATH,
-    SERVICE_DETAIL_PATH,
-    SERVICES_PATH
-} from "../../Shared/config/routes";
+import {createBrowserRouter, Navigate} from "react-router-dom";
+import {BOARD_PATH, BOARDS_PATH, HOME_PATH, LOGIN_PATH, REGISTER_PATH} from "../../Shared/config/routes";
+import {Layout} from "../../Shared/layout/Layout";
+import {ProtectedRoute} from "../routes/protected-route";
 import {LoginPage} from "../../Pages/LoginPage";
 import {RegisterPage} from "../../Pages/RegisterPage";
-import {ServicesPage} from "../../Pages/ServicesPage";
-import {ServiceDetailPage} from "../../Pages/ServiceDetailPage";
-import {ProfilePage} from "../../Pages/ProfilePage";
-import {ProtectedRoute} from "../routes/protected-route";
-import {Layout} from "../../Shared/layout/Layout";
-import {MyBookingsPage} from "../../Pages/MyBookingsPage";
-import {ProtectedAdminRoute} from "../routes/admin-route.tsx";
-import {AdminServicesPage} from "../../Pages/AdminServicesPage";
-import {AdminSlotsPage} from "../../Pages/AdminSlotsPage";
-import {AdminBookingsPage} from "../../Pages/AdminBookingsPage";
+import {BoardsPage} from "../../Pages/BoardsPage/ui/BoardsPage.tsx";
+import {BoardPage} from "../../Pages/BoardPage/ui/BoardPage.tsx";
 
 export const router = createBrowserRouter([
     {
         element: <Layout/>,
         children: [
+            {
+                path: HOME_PATH,
+                element: <Navigate to={BOARDS_PATH} replace/>
+            },
             {
                 path: LOGIN_PATH,
                 element: <LoginPage/>
@@ -36,36 +24,16 @@ export const router = createBrowserRouter([
                 element: <RegisterPage/>
             },
             {
-                path: PROFILE_PATH,
-                element: <ProtectedRoute><ProfilePage/></ProtectedRoute>
+                path: BOARDS_PATH,
+                element: <ProtectedRoute><BoardsPage/></ProtectedRoute>
             },
             {
-                path: HOME_PATH,
-                element: <ServicesPage/>
+                path: BOARD_PATH,
+                element: <ProtectedRoute><BoardPage/></ProtectedRoute>
             },
             {
-                path: SERVICES_PATH,
-                element: <ServicesPage/>
-            },
-            {
-                path: SERVICE_DETAIL_PATH,
-                element: <ServiceDetailPage/>
-            },
-            {
-                path:MY_BOOKINGS_PATH,
-                element:<ProtectedRoute><MyBookingsPage/></ProtectedRoute>
-            },
-            {
-                path:ADMIN_SERVICES_PATH,
-                element:<ProtectedAdminRoute><AdminServicesPage/></ProtectedAdminRoute>
-            },
-            {
-                path:ADMIN_SLOTS_PATH,
-                element:<ProtectedAdminRoute><AdminSlotsPage/></ProtectedAdminRoute>
-            },
-            {
-                path:ADMIN_BOOKINGS_PATH,
-                element:<ProtectedAdminRoute><AdminBookingsPage/></ProtectedAdminRoute>
+                path: '*',
+                element: <Navigate to={BOARDS_PATH} replace/>
             }
         ]
     },

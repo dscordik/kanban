@@ -1,5 +1,5 @@
 import {Link, useNavigate} from "react-router-dom";
-import {HOME_PATH, LOGIN_PATH} from "../../../Shared/config/routes";
+import {BOARDS_PATH, LOGIN_PATH} from "../../../Shared/config/routes";
 import {RegisterForm} from "../../../Features/auth-by-email/register";
 import "../../../Shared/ui/AuthPage.css";
 
@@ -7,7 +7,7 @@ export const RegisterPage = () => {
     const navigate = useNavigate()
 
     function handleRegisterSuccess() {
-        navigate(HOME_PATH)
+        navigate(BOARDS_PATH)
     }
 
     return (
