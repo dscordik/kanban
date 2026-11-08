@@ -8,6 +8,7 @@ import { MemberRow } from "../MemberRow/MemberRow.tsx";
 import { useMembersActions } from "../../model/use-members-actions.ts";
 import type { BoardRole } from "../../../../Entities/board";
 import {AddMemberForm} from "../AddMemberFrom/AddMemberFrom.tsx";
+import './MembersDialog.css'
 
 interface MembersDialogProps {
     boardId: number;
@@ -28,6 +29,7 @@ export const MembersDialog: React.FC<MembersDialogProps> = ({boardId, boardTitle
 
     const actions = useMembersActions(boardId, myUserId);
     const isOwner = myRole === "owner";
+    const actionError = actions.changeRole.error ?? actions.removeMember.error ?? actions.leaveBoard.error;
 
     return (
         <Modal isOpen={isOpen} title={`Участники — ${boardTitle}`} onClose={onClose}>
@@ -37,6 +39,9 @@ export const MembersDialog: React.FC<MembersDialogProps> = ({boardId, boardTitle
                     <div className="members-dialog__error">
                         {getErrorMessage(error)}
                     </div>
+                )}
+                {actionError && (
+                    <div className="members-dialog__error">{getErrorMessage(actionError)}</div>
                 )}
                 {members && (
                     <div className="members-dialog__list">

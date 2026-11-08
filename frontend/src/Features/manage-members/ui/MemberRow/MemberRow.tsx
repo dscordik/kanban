@@ -1,9 +1,11 @@
 import * as React from "react";
 import { RoleBadge } from "../../../../Shared/ui/RoleBadge/RoleBadge.tsx";
 import { Button } from "../../../../Shared/ui/Button/Button.tsx";
-import type { Member } from "../../../../Entities/board-member";
-import type { useMembersActions } from "../../model/use-members-actions.ts";
 import { Select } from "../../../../Shared/ui/Select/Select.tsx";
+import type { Member } from "../../../../Entities/board-member";
+import type { BoardRole } from "../../../../Entities/board";
+import type { useMembersActions } from "../../model/use-members-actions.ts";
+import "./MemberRow.css";
 
 interface MemberRowProps {
     member: Member;
@@ -14,30 +16,35 @@ interface MemberRowProps {
     onLeave: () => void;
 }
 
-const roleOptions = [
+const roleOptions: { value: BoardRole; label: string }[] = [
     { value: "viewer", label: "Наблюдатель" },
     { value: "editor", label: "Редактор" },
     { value: "owner", label: "Владелец" },
 ];
 
-export const MemberRow: React.FC<MemberRowProps> = ({member, isOwner, isMe, boardTitle, actions, onLeave,}) => {
+export const MemberRow: React.FC<MemberRowProps> = ({ member, isOwner, isMe, boardTitle, actions, onLeave }) => {
     const { changeRole, removeMember, leaveBoard } = actions;
-    const handleRoleChange = (newRole: string) => {
-        changeRole.mutate({
-            userId: member.user_id,
-            role: { role: newRole as any },
-        });
+
+    const clearErrors = () => {
+        changeRole.reset();
+        removeMember.reset();
+        leaveBoard.reset();
+    };
+
+    const handleRoleChange = (newRole: BoardRole) => {
+        clearErrors();
+        changeRole.mutate({ userId: member.user_id, role: { role: newRole } });
     };
     const handleRemove = () => {
         if (window.confirm(`Убрать ${member.first_name || member.email} с доски?`)) {
+            clearErrors();
             removeMember.mutate(member.user_id);
         }
     };
     const handleLeave = () => {
         if (window.confirm(`Выйти с доски «${boardTitle}»?`)) {
-            leaveBoard.mutate(undefined, {
-                onSuccess: () => onLeave(),
-            });
+            clearErrors();
+            leaveBoard.mutate(undefined, { onSuccess: () => onLeave() });
         }
     };
 
@@ -53,11 +60,9 @@ export const MemberRow: React.FC<MemberRowProps> = ({member, isOwner, isMe, boar
             <div className="member-row__controls">
                 {isOwner ? (
                     <>
-                        <Select className="member-row__role-select" value={member.role} onChange={(e) => handleRoleChange(e.target.value)} disabled={changeRole.isPending}>
+                        <Select className="member-row__role-select" value={member.role} onChange={(e) => handleRoleChange(e.target.value as BoardRole)} disabled={changeRole.isPending}>
                             {roleOptions.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                </option>
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                         </Select>
                         {!isMe && (
@@ -67,7 +72,7 @@ export const MemberRow: React.FC<MemberRowProps> = ({member, isOwner, isMe, boar
                 ) : (
                     <RoleBadge role={member.role} />
                 )}
-                {isMe && !isOwner && (
+                {isMe && (
                     <Button variant="secondary" onClick={handleLeave} disabled={leaveBoard.isPending}>Выйти с доски</Button>
                 )}
             </div>

@@ -6,6 +6,7 @@ import { getErrorMessage } from "../../../../Shared/lib/get-error-message.ts";
 import type { useMembersActions } from "../../model/use-members-actions.ts";
 import type { MemberAdd } from "../../../../Entities/board-member";
 import {Select} from "../../../../Shared/ui/Select/Select.tsx";
+import './AddMemberFrom.css'
 
 interface AddMemberFormProps {
     actions: ReturnType<typeof useMembersActions>;

@@ -4,6 +4,7 @@ import { useCreateBoard } from "../model/use-create-board";
 import { Input } from "../../../Shared/ui/Input/Input.tsx";
 import { Button } from "../../../Shared/ui/Button/Button.tsx";
 import { getErrorMessage } from "../../../Shared/lib/get-error-message.ts";
+import './CreateBoardForm.css'
 
 interface CreateBoardFormProps {
     onSuccess: () => void; // Коллбек для закрытия модалки
