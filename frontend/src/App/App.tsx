@@ -1,4 +1,3 @@
-import './App.css'
 import {RouterProvider} from "react-router-dom";
 import {router} from "./providers/router.tsx";
 import {WithAuth} from "./providers/with-auth.tsx";
