@@ -24,11 +24,13 @@
     cursor: not-allowed;
 }
 
+.button:active:not(:disabled) { transform: translateY(1px); }
+
 /* Варианты */
 .button--primary {
     background: var(--color-primary);
     border-color: var(--color-primary);
-    color: var(--color-text);
+    color: var(--color-on-primary);
     box-shadow: var(--shadow-sm);
 }
 
@@ -67,5 +69,3 @@
 }
 
 .button--full { width: 100%; }
-
-.button:active:not(:disabled) { transform: translateY(1px); }

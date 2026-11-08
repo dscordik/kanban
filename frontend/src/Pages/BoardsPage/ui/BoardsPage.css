@@ -1,0 +1,100 @@
+.boards-page__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+}
+
+.boards-page__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-md);
+}
+
+.boards-page__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-xl) var(--space-md);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.6);
+    font-size: 16px;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.boards-page__error {
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+}
+
+/* Карточка доски */
+.board-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-height: 170px;
+    padding: var(--space-md);
+    overflow: hidden;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    color: var(--color-text);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.board-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-primary), #7cc59a);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.board-card:hover {
+    transform: translateY(-3px);
+    border-color: #b9d0b9;
+    box-shadow: var(--shadow-md);
+    text-decoration: none;
+}
+
+.board-card:hover::before { opacity: 1; }
+
+.board-card__title {
+    font-size: 20px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.board-card__description {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.board-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-top: auto;
+    padding-top: var(--space-sm);
+}
+
+.board-card__members {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}

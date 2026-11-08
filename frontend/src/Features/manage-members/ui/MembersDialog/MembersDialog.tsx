@@ -1,13 +1,13 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Modal } from "../../../Shared/ui/Modal/Modal.tsx";
-import { Spinner } from "../../../Shared/ui/Spinner/Spinner.tsx";
-import { getErrorMessage } from "../../../Shared/lib/get-error-message.ts";
-import { getMembers, boardMembersKeys } from "../../../Entities/board-member";
-import { MemberRow } from "./MemberRow.tsx";
-import { useMembersActions } from "../model/use-members-actions";
-import type { BoardRole } from "../../../Entities/board";
-import {AddMemberForm} from "./AddMemberFrom.tsx";
+import { Modal } from "../../../../Shared/ui/Modal/Modal.tsx";
+import { Spinner } from "../../../../Shared/ui/Spinner/Spinner.tsx";
+import { getErrorMessage } from "../../../../Shared/lib/get-error-message.ts";
+import { getMembers, boardMembersKeys } from "../../../../Entities/board-member";
+import { MemberRow } from "../MemberRow/MemberRow.tsx";
+import { useMembersActions } from "../../model/use-members-actions.ts";
+import type { BoardRole } from "../../../../Entities/board";
+import {AddMemberForm} from "../AddMemberFrom/AddMemberFrom.tsx";
 
 interface MembersDialogProps {
     boardId: number;

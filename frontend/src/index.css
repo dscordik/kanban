@@ -1,28 +1,36 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --color-bg: #fffaf0;
+    color-scheme: light;
+
+    --color-bg: #f3f7f2;
     --color-surface: #ffffff;
-    --color-surface-alt: #fff4de;
-    --color-text: #3f2f17;
-    --color-text-muted: #8a7357;
+    --color-surface-alt: #ebf2ea;
+    --color-header-bg: rgba(243, 247, 242, 0.85);
 
-    --color-primary: #e8a33d;
-    --color-primary-hover: #d8921f;
-    --color-primary-soft: #fde9bf;
+    --color-heading: #17402a;
+    --color-text: #1e2d24;
+    --color-text-muted: #5c7064;
 
-    --color-border: #f0dfb8;
+    --color-primary: #2a7f53;
+    --color-primary-hover: #216a44;
+    --color-primary-soft: #dcefe1;
+    --color-on-primary: #ffffff;
+    --color-ring: rgba(42, 127, 83, 0.22);
 
-    --color-danger: #c75146;
-    --color-danger-bg: #fdeceb;
+    --color-border: #d3e1d2;
+
+    --color-danger: #b4443c;
+    --color-danger-bg: #fbeceb;
 
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 20px;
+    --radius-pill: 999px;
 
-    --shadow-sm: 0 1px 2px rgba(120, 90, 30, 0.08);
-    --shadow-md: 0 8px 24px rgba(120, 90, 30, 0.12);
-    --shadow-lift: 0 14px 32px rgba(216, 146, 31, 0.22);
+    --shadow-sm: 0 1px 2px rgba(30, 77, 50, 0.08);
+    --shadow-md: 0 10px 28px rgba(30, 77, 50, 0.12);
+    --shadow-lift: 0 14px 30px rgba(42, 127, 83, 0.28);
 
     --space-xs: 6px;
     --space-sm: 12px;
@@ -47,8 +55,8 @@ body {
     margin: 0;
     min-height: 100vh;
     background:
-            radial-gradient(circle at 10% -10%, #fff1cf 0%, transparent 45%),
-            radial-gradient(circle at 90% 0%, #ffe3b0 0%, transparent 40%),
+            radial-gradient(circle at 8% -10%, #dcefe0 0%, transparent 45%),
+            radial-gradient(circle at 92% 0%, #e4efd6 0%, transparent 40%),
             var(--color-bg);
     background-attachment: fixed;
 }
@@ -61,11 +69,13 @@ body {
 
 h1, h2, h3 {
     font-family: var(--font-heading);
-    color: var(--color-text);
+    color: var(--color-heading);
     margin: 0;
     font-weight: 600;
+    text-wrap: balance;
 }
 
+h1 { font-size: 34px; letter-spacing: -0.5px; }
 h2 { font-size: 28px; letter-spacing: -0.3px; }
 h3 { font-size: 20px; }
 p { margin: 0; line-height: 1.5; }
@@ -78,11 +88,8 @@ input { font-family: inherit; }
 
 ::selection { background: var(--color-primary-soft); }
 
-/* --- добавки --- */
-h1, h2, h3 { text-wrap: balance; }
-
 :focus-visible {
-    outline: 2px solid var(--color-primary-hover);
+    outline: 2px solid var(--color-primary);
     outline-offset: 2px;
 }
 

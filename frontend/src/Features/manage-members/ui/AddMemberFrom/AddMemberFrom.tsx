@@ -1,11 +1,11 @@
 import * as React from "react";
 import { useState } from "react";
-import { Input } from "../../../Shared/ui/Input/Input.tsx";
-import { Button } from "../../../Shared/ui/Button/Button.tsx";
-import { getErrorMessage } from "../../../Shared/lib/get-error-message.ts";
-import type { useMembersActions } from "../model/use-members-actions";
-import type { MemberAdd } from "../../../Entities/board-member";
-import {Select} from "../../../Shared/ui/Select/Select.tsx";
+import { Input } from "../../../../Shared/ui/Input/Input.tsx";
+import { Button } from "../../../../Shared/ui/Button/Button.tsx";
+import { getErrorMessage } from "../../../../Shared/lib/get-error-message.ts";
+import type { useMembersActions } from "../../model/use-members-actions.ts";
+import type { MemberAdd } from "../../../../Entities/board-member";
+import {Select} from "../../../../Shared/ui/Select/Select.tsx";
 
 interface AddMemberFormProps {
     actions: ReturnType<typeof useMembersActions>;

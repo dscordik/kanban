@@ -26,7 +26,7 @@
     font-size: 22px;
     font-weight: 600;
     letter-spacing: -0.2px;
-    color: var(--color-text);
+    color: var(--color-heading);
 }
 
 .site-header__brand::before {
@@ -57,14 +57,27 @@
 
 .site-nav__link:hover {
     background: var(--color-primary-soft);
-    color: var(--color-text);
+    color: var(--color-heading);
     text-decoration: none;
 }
 
 .site-nav__link--active {
     background: var(--color-primary-soft);
-    color: var(--color-text);
+    color: var(--color-heading);
     font-weight: 600;
+}
+
+.site-nav__user {
+    max-width: 180px;
+    padding: 6px 12px;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-alt);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .site-nav__logout { margin-left: var(--space-xs); }
@@ -81,14 +94,4 @@
 
     .site-header__brand { font-size: 18px; }
     .site-nav__link { padding: 6px 10px; font-size: 14px; }
-}
-.site-nav__user {
-    max-width: 180px;
-    padding: 0 var(--space-xs);
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--color-text-muted);
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }

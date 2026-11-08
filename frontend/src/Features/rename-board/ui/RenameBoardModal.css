@@ -1,0 +1,25 @@
+/* Модалка «Переименовать доску» */
+.rename-board-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.rename-board-form__field {
+    display: flex;
+    flex-direction: column;
+}
+
+.rename-board-form__error {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    font-size: 14px;
+}
+
+.rename-board-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-xs);
+}

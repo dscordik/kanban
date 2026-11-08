@@ -1,9 +1,9 @@
 import * as React from "react";
-import { RoleBadge } from "../../../Shared/ui/RoleBadge/RoleBadge.tsx";
-import { Button } from "../../../Shared/ui/Button/Button.tsx";
-import type { Member } from "../../../Entities/board-member";
-import type { useMembersActions } from "../model/use-members-actions";
-import { Select } from "../../../Shared/ui/Select/Select.tsx";
+import { RoleBadge } from "../../../../Shared/ui/RoleBadge/RoleBadge.tsx";
+import { Button } from "../../../../Shared/ui/Button/Button.tsx";
+import type { Member } from "../../../../Entities/board-member";
+import type { useMembersActions } from "../../model/use-members-actions.ts";
+import { Select } from "../../../../Shared/ui/Select/Select.tsx";
 
 interface MemberRowProps {
     member: Member;

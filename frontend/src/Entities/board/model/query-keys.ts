@@ -1,4 +1,5 @@
 export const boardKeys = {
-    list:['boards'],
-    detail: (id:number) => ['boards', id]
+    all: ['boards'] as const,
+    list: ['boards', 'list'] as const,
+    detail: (id: number) => ['boards', 'detail', id] as const,
 }

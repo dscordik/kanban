@@ -1,0 +1,22 @@
+
+/* Модалка «Удаление доски» */
+.delete-board-modal__text {
+    margin-bottom: var(--space-md);
+    color: var(--color-text);
+}
+
+.delete-board-modal__error {
+    margin-bottom: var(--space-md);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    font-size: 14px;
+}
+
+.delete-board-modal__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-xs);
+}
