@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 from starlette import status
 from app.deps import get_db
-from app.models import BoardMember, User
+from app.models import BoardMember, User, Card
 from app.permissions import require_board_role, count_owners
 from app.schemas import MemberOut, MemberAdd, MemberRoleUpdate
 
@@ -29,7 +29,7 @@ def add_member(board_id:int, member_data:MemberAdd , member:BoardMember = Depend
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь с таким email не найден')
     find_user_by_id = db.query(BoardMember).filter(BoardMember.board_id == board_id, BoardMember.user_id == user.id).first()
     if find_user_by_id:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='пользователь уже участвует в доске')
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Пользователь уже участвует в доске')
     new_member = BoardMember(
         board_id=board_id,
         user_id=user.id,
@@ -56,16 +56,16 @@ def update_member_role(board_id:int, user_id:int, role_data:MemberRoleUpdate, me
         db.refresh(find_member)
     return member_out(find_member, find_member.user)
 
+
 @router.delete('/boards/{board_id}/members/{user_id}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_member(board_id:int, user_id:int, member:BoardMember = Depends(require_board_role('viewer')), db:Session = Depends(get_db)):
-    find_member = db.query(BoardMember).filter(BoardMember.board_id == board_id, BoardMember.user_id == user_id).first()
+def delete_member(board_id: int,user_id: int,member: BoardMember = Depends(require_board_role('viewer')),db: Session = Depends(get_db)):
+    find_member = db.query(BoardMember).filter(BoardMember.board_id == board_id,BoardMember.user_id == user_id).first()
     if find_member is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Участник не найден')
     if find_member.user_id != member.user_id and member.role != 'owner':
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Недостаточно прав')
     if find_member.role == 'owner' and count_owners(db, board_id) <= 1:
-        if count_owners(db, board_id) <= 1:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Нельзя оставить доску без владельца. Сначала назначьте другого владельца')
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail='Нельзя оставить доску без владельца. Сначала назначьте другого владельца')
+    db.query(Card).filter(Card.board_id == board_id,Card.assignee_id == user_id).update({Card.assignee_id: None})
     db.delete(find_member)
     db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

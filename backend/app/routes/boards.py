@@ -66,7 +66,7 @@ def update_board(board_id:int, board_data: BoardUpdate, member:BoardMember = Dep
     db.refresh(board)
     return board_out(board, member.role)
 
-@router.delete('/boards/{board_id}')
+@router.delete('/boards/{board_id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_board(board_id:int, member:BoardMember = Depends(require_board_role('owner')), db:Session = Depends(get_db)):
     board = db.query(Board).filter(Board.id == board_id).first()
     if board is None:

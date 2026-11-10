@@ -1,9 +1,8 @@
 from datetime import datetime
 from typing import Literal
-from pydantic import BaseModel, ConfigDict, field_validator, EmailStr, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, EmailStr, model_validator, Field
 
 BoardRole = Literal['owner', 'editor', 'viewer']
-
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -131,3 +130,104 @@ class MemberAdd(BaseModel):
 
 class MemberRoleUpdate(BaseModel):
     role: BoardRole
+
+class LabelCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    color: str = Field(..., pattern=r"^#[0-9A-Fa-f]{6}$")
+
+    @field_validator('name', mode='before')
+    @classmethod
+    def strip_name(cls, v: str) -> str:
+        return v.strip() if isinstance(v, str) else v
+
+
+class LabelUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=50)
+    color: str | None = Field(default=None, pattern=r"^#[0-9A-Fa-f]{6}$")
+
+    @field_validator('name', mode='before')
+    @classmethod
+    def strip_name(cls, v: str | None) -> str | None:
+        return v.strip() if isinstance(v, str) else v
+
+
+class LabelOut(BaseModel):
+    id: int
+    board_id: int
+    name: str
+    color: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ColumnCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+
+    @field_validator('title', mode='before')
+    @classmethod
+    def strip_title(cls, v: str) -> str:
+        return v.strip() if isinstance(v, str) else v
+
+
+class ColumnUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+
+    @field_validator('title', mode='before')
+    @classmethod
+    def strip_title(cls, v: str | None) -> str | None:
+        return v.strip() if isinstance(v, str) else v
+
+
+class ColumnOut(BaseModel):
+    id: int
+    board_id: int
+    title: str
+    position: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+class CardCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+
+    @field_validator('title', mode='before')
+    @classmethod
+    def strip_title(cls, v: str) -> str:
+        return v.strip() if isinstance(v, str) else v
+
+
+class CardUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=2000)
+    assignee_id: int | None = None
+    due_date: str | None = None
+    label_ids: list[int] | None = None
+
+    @field_validator('title', mode='before')
+    @classmethod
+    def strip_title(cls, v: str | None) -> str | None:
+        return v.strip() if isinstance(v, str) else v
+
+
+class CardOut(BaseModel):
+    id: int
+    column_id: int
+    title: str
+    description: str | None
+    position: float
+    assignee_id: int | None
+    due_date: str | None
+    labels: list[LabelOut]
+    created_by: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ColumnWithCards(ColumnOut):
+    cards: list[CardOut]
+
+
+class BoardContent(BaseModel):
+    columns: list[ColumnWithCards]
+    labels: list[LabelOut]
