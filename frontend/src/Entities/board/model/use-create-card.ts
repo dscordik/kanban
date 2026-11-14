@@ -1,15 +1,12 @@
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {createCard} from "../api/board-content.ts";
-import {boardContentKey} from "./query-keys.ts";
-
+import {createCard} from "../api/board-content";
+import {boardContentKey} from "./query-keys";
 
 export function useCreateCard(boardId:number) {
     const queryClient = useQueryClient()
 
-    const {mutate, isError, isPending, isSuccess} = useMutation({
-        mutationFn:(createValue:{columnId:number, title:string}) => createCard(createValue.columnId, createValue.title),
+    return useMutation({
+        mutationFn:({columnId, title}:{columnId:number, title:string}) => createCard(columnId, title),
         onSuccess:() => queryClient.invalidateQueries({queryKey:boardContentKey(boardId)})
     })
-
-    return {mutate, isError, isPending, isSuccess}
 }

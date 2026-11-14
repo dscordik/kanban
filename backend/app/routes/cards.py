@@ -52,13 +52,11 @@ def update_card(card_id:int, data:CardUpdate, member_and_card:tuple[BoardMember,
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Исполнитель не участвует в доске')
             card.assignee_id = data.assignee_id
     if 'label_ids' in data.model_fields_set:
-        if data.label_ids is None or len(data.label_ids) == 0:
-            card.labels = []
-        else:
-            labels = db.query(Label).filter(Label.id.in_(data.label_ids), Label.board_id == card.board_id).count()
-            if labels != len(data.label_ids):
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail='Метка не найдена на этой доске')
-            card.labels = db.query(Label).filter(Label.id.in_(data.label_ids)).all()
+        ids = list(set(data.label_ids or []))
+        labels = db.query(Label).filter(Label.id.in_(ids), Label.board_id == card.board_id).all() if ids else []
+        if len(labels) != len(ids):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Метка не найдена на этой доске')
+        card.labels = labels
     db.commit()
     card = db.query(Card).options(selectinload(Card.labels)).filter(Card.id == card.id).first()
     return card

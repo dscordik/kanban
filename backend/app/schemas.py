@@ -172,10 +172,11 @@ class ColumnCreate(BaseModel):
 class ColumnUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=100)
 
-    @field_validator('title', mode='before')
-    @classmethod
-    def strip_title(cls, v: str | None) -> str | None:
-        return v.strip() if isinstance(v, str) else v
+    @model_validator(mode='after')
+    def fields_not_null(self) -> 'CardUpdate': 
+        if 'title' in self.model_fields_set and self.title is None:
+            raise ValueError('Название не может быть пустым')
+        return self
 
 
 class ColumnOut(BaseModel):
@@ -200,7 +201,7 @@ class CardUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=2000)
     assignee_id: int | None = None
-    due_date: str | None = None
+    due_date: datetime | None = None
     label_ids: list[int] | None = None
 
     @field_validator('title', mode='before')
@@ -216,7 +217,7 @@ class CardOut(BaseModel):
     description: str | None
     position: float
     assignee_id: int | None
-    due_date: str | None
+    due_date: datetime | None
     labels: list[LabelOut]
     created_by: int
     created_at: datetime

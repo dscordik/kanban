@@ -1,0 +1,45 @@
+.label-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 3px 10px 3px 8px;
+    border: 1px solid color-mix(in srgb, var(--label-color) 35%, white);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--label-color) 14%, white);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text);
+}
+
+.label-chip__dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--label-color);
+}
+
+.label-chip__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.label-chip--clickable {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.label-chip--clickable:hover {
+    opacity: 1;
+}
+
+.label-chip--selected {
+    opacity: 1;
+    border-color: var(--label-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--label-color) 28%, transparent);
+}

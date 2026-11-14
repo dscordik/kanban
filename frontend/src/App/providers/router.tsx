@@ -5,7 +5,7 @@ import {ProtectedRoute} from "../routes/protected-route";
 import {LoginPage} from "../../Pages/LoginPage";
 import {RegisterPage} from "../../Pages/RegisterPage";
 import {BoardsPage} from "../../Pages/BoardsPage/ui/BoardsPage.tsx";
-import {BoardPage} from "../../Pages/BoardPage/ui/BoardPage.tsx";
+import {BoardPage} from "../../Pages/BoardPage/ui/BoardPage/BoardPage.tsx";
 
 export const router = createBrowserRouter([
     {

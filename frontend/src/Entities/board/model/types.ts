@@ -63,3 +63,11 @@ export interface BoardContent{
     columns:ColumnWithCards[]
     labels:Label[]
 }
+
+export interface CardUpdate{
+    title?:string
+    description?:string | null
+    assignee_id?:number | null
+    due_date?:string | null
+    label_ids?:number[]
+}

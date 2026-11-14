@@ -50,3 +50,11 @@ def require_label_role(min_role:str):
         member = check_board_role(label.board_id, min_role, user, db)
         return member, label
     return dependency
+
+def check_role_or_404(board_id: int, min_role: str, user: User, db: Session, not_found: str) -> BoardMember:
+    try:
+        return check_board_role(board_id, min_role, user, db)
+    except HTTPException as exc:
+        if exc.status_code == status.HTTP_404_NOT_FOUND:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=not_found) from None
+        raise

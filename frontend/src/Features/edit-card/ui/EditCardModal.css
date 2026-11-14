@@ -1,0 +1,116 @@
+.edit-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.edit-card__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+}
+
+.edit-card__label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.edit-card__textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 12px 14px;
+    resize: vertical;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-alt);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--color-text);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.edit-card__textarea::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.8;
+}
+
+.edit-card__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-surface);
+    box-shadow: 0 0 0 3px var(--color-ring);
+}
+
+.edit-card__textarea:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.edit-card__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+}
+
+.edit-card__date {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.edit-card__labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.edit-card__hint {
+    font-size: 14px;
+    color: var(--color-text-muted);
+}
+
+.edit-card__error {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    font-size: 14px;
+}
+
+.edit-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+}
+
+.edit-card__danger-zone {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.edit-card__confirm-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-danger);
+}
+
+.edit-card__buttons {
+    display: flex;
+    gap: var(--space-xs);
+    margin-left: auto;
+}
+
+@media (max-width: 520px) {
+    .edit-card__row {
+        grid-template-columns: 1fr;
+    }
+}
