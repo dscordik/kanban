@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import func
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, selectinload, joinedload
 from starlette import status
 from starlette.exceptions import HTTPException
 
 from app.deps import get_db
 from app.models import BoardMember, Column, Card, Label
+from app.move_service import calculate_new_position
+from app.ordering import calculate_position, rebalance_positions
 from app.permissions import require_column_role, require_card_role
-from app.schemas import CardOut, CardCreate, CardUpdate
+from app.schemas import CardOut, CardCreate, CardUpdate, MoveCard
 
 router = APIRouter()
 
@@ -66,3 +68,49 @@ def delete_card(card_id:int, member_and_card:tuple[BoardMember, Card] = Depends(
     _, card = member_and_card
     db.delete(card)
     db.commit()
+
+@router.post('/cards/{card_id}/move')
+def move_card(card_id:int, body:MoveCard, member_and_card:tuple[BoardMember, Card] = Depends(require_card_role('editor')), db:Session = Depends(get_db)):
+    after = None
+    before = None
+
+    _, cards = member_and_card
+    card_board_id = cards.column.board_id
+    target = db.query(Column).filter(Column.id == body.column_id).first()
+
+    if not target or target.board_id != card_board_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Колонка не найдена')
+
+    column_ids = sorted([cards.column_id, body.column_id])
+    locked_column = db.query(Column).filter(Column.id.in_(column_ids)).order_by(Column.id).with_for_update().all()
+
+    if body.after_id is not None:
+        after = db.query(Card).filter(Card.id == body.after_id).first()
+        if not after or after.column.board_id != card_board_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Карточка не найдена')
+        if after.id == card_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail='Нельзя указать перемещенный объект')
+        if after.column_id != body.column_id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Порядок изменился. Обновите страницу')
+
+    if body.before_id is not None:
+        before = db.query(Card).filter(Card.id == body.before_id).first()
+        if not before or before.column.board_id != card_board_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Карточка не найдена')
+        if before.id == card_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail='Нельзя указать перемещенный объект')
+        if before.column_id != body.column_id:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Порядок изменился. Обновите страницу')
+
+    if body.after_id is not None and body.before_id is not None:
+        if after.position >= before.position:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Порядок изменился. Обновите страницу')
+    target_columns = db.query(Card).filter(Card.column_id == body.column_id, Card.id != card_id).order_by(Card.position, Card.id).all()
+
+    new_position = calculate_new_position(db, target_columns, after, before)
+
+    cards.column_id = body.column_id
+    cards.position = new_position
+    db.commit()
+    db.refresh(cards)
+    return cards

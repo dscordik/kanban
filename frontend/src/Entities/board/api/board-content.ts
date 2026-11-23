@@ -33,3 +33,13 @@ export const updateCard = async(cardId:number, data:Partial<Card>):Promise<Card>
     const res = await api.patch<Card>(`/cards/${cardId}`, data)
     return res.data
 }
+
+export const moveCard = async(cardId:number, payload:{column_id:number, after_id:number | null, before_id:number | null}):Promise<Card> => {
+    const res = await api.post<Card>(`/cards/${cardId}/move`, payload)
+    return res.data
+}
+
+export const moveColumn = async(columnId:number, payload:{after_id:number | null, before_id:number | null}):Promise<Column> => {
+    const res = await api.post<Column>(`/columns/${columnId}/move`, payload)
+    return res.data
+}

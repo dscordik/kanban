@@ -9,4 +9,5 @@ export {useRenameColumn} from "./model/use-rename-column"
 export {useUpdateCard} from "./model/use-update-card"
 export {useBoardContent} from "./model/use-board-content"
 export {getBoard, createBoard, deleteBoard, getBoards, updateBoard} from "./api/board-api"
-export {getBoardContent, createCard, createColumn, deleteCard, deleteColumn, renameColumn, updateCard} from "./api/board-content"
+export {getBoardContent, createCard, createColumn, deleteCard, deleteColumn, renameColumn, updateCard, moveCard, moveColumn} from "./api/board-content"
+export {getNeighbors, moveCardInContent, moveColumnInContent} from "./lib/move";

@@ -8,6 +8,10 @@ import {Button} from "../../../../Shared/ui/Button/Button.tsx";
 import {getErrorMessage} from "../../../../Shared/lib/get-error-message.ts";
 import { CardItem } from "../CardItem/CardItem.tsx";
 import {Modal} from "../../../../Shared/ui/Modal/Modal.tsx";
+import {SortableContext, useSortable, verticalListSortingStrategy} from "@dnd-kit/sortable";
+import {getCardDndId, getColumnDndId} from "../../../../Entities/board/lib/dnd-utils.ts";
+import {useDroppable} from "@dnd-kit/core";
+import {CSS} from "@dnd-kit/utilities";
 
 interface BoardColumnProps {
     column: ColumnWithCards
@@ -15,9 +19,10 @@ interface BoardColumnProps {
     canEdit: boolean
     members: Member[]
     onOpenCard: (cardId: number) => void
+    didDrag:boolean
 }
 
-export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdit, members, onOpenCard}) => {
+export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdit, members, onOpenCard, didDrag}) => {
     const renameColumn = useRenameColumn(boardId)
     const createCard = useCreateCard(boardId)
     const deleteColumn = useDeleteColumn(boardId)
@@ -85,9 +90,18 @@ export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdi
         deleteColumn.reset()
     }
 
+    const {setNodeRef:setDroppableRef} = useDroppable({id: getColumnDndId(column.id)})
+
+    const {setNodeRef:setSortableRef , attributes, listeners, transition, transform, isDragging} = useSortable({id:getColumnDndId(column.id), data:{type:'column'}})
+    const style = {
+        transform:CSS.Translate.toString(transform),
+        transition:transition,
+        opacity: isDragging ? 0.5 : 1
+    }
+
     return (
-        <section className="board-column">
-            <div className="board-column__header">
+        <section ref={setSortableRef} style={style} className={isDragging ? 'board-column--dragging' : 'board-column'}>
+            <div {...attributes} {...listeners} className="board-column__header">
                 {isRenaming ? (
                     <div className="board-column__rename">
                         <Input
@@ -130,11 +144,13 @@ export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdi
                 <div className="board-column__error">{getErrorMessage(renameColumn.error)}</div>
             )}
 
-            <div className="board-column__cards">
+            <div ref={setDroppableRef} className="board-column__cards">
                 {column.cards.length === 0 && <p className="board-column__empty">Нет карточек</p>}
-                {column.cards.map((card) => (
-                    <CardItem key={card.id} card={card} members={members} onClick={() => onOpenCard(card.id)}/>
-                ))}
+                <SortableContext items={column.cards.map((item) => getCardDndId(item.id))} strategy={verticalListSortingStrategy}>
+                    {column.cards.map((card) => (
+                        <CardItem didDrag={didDrag} key={card.id} card={card} members={members} onClick={() => onOpenCard(card.id)}/>
+                    ))}
+                </SortableContext>
             </div>
 
             {canEdit && (

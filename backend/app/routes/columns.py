@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 from starlette import status
 from starlette.exceptions import HTTPException
 from app.deps import get_db
-from app.models import BoardMember, Column, Card
+from app.models import BoardMember, Column, Card, Board
+from app.move_service import calculate_new_position
 from app.permissions import require_board_role, require_column_role
-from app.schemas import ColumnCreate, ColumnOut, ColumnUpdate
+from app.schemas import ColumnCreate, ColumnOut, ColumnUpdate, MoveColumn
 
 router = APIRouter()
 
@@ -45,3 +46,31 @@ def delete_column(column_id:int, member_and_column:tuple[BoardMember, Column] = 
     else:
         db.delete(column)
         db.commit()
+
+@router.post('/columns/{column_id}/move', status_code=status.HTTP_200_OK)
+def move_column(column_id:int, body:MoveColumn, member_and_column:tuple[BoardMember, Column] = Depends(require_column_role('editor')), db:Session = Depends(get_db)):
+    _, column = member_and_column
+    locked_column = db.query(Board).filter(Board.id == column.board_id).with_for_update().first()
+    after = None
+    before = None
+    if body.after_id is not None:
+        after = db.query(Column).filter(Column.id == body.after_id).first()
+        if not after or after.board_id != column.board_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Колонка не найдена')
+        if after.id == column_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail='Нельзя указать перемещенный объект')
+    if body.before_id is not None:
+        before = db.query(Column).filter(Column.id == body.before_id).first()
+        if not before or before.board_id != column.board_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Колонка не найдена')
+        if before.id == column_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail='Нельзя указать перемещенный объект')
+    if body.after_id is not None and body.before_id is not None:
+        if after.position >= before.position:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Порядок изменился. Обновите страницу")
+    columns = db.query(Column).filter(Column.board_id == column.board_id, Column.id != column_id).order_by(Column.position,Column.id).all()
+    new_position = calculate_new_position(db, columns, after, before)
+    column.position = new_position
+    db.commit()
+    db.refresh(column)
+    return column

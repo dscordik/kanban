@@ -209,6 +209,27 @@ class CardUpdate(BaseModel):
     def strip_title(cls, v: str | None) -> str | None:
         return v.strip() if isinstance(v, str) else v
 
+class MoveCard(BaseModel):
+    column_id: int
+    before_id:int | None = None
+    after_id:int | None = None
+
+    @model_validator(mode='after')
+    def move_card(self):
+        if self.before_id is not None and self.after_id is not None and self.before_id == self.after_id:
+            raise ValueError('before_id и after_id не могут совпадать')
+        return self
+
+class MoveColumn(BaseModel):
+    before_id:int | None = None
+    after_id:int | None = None
+
+    @model_validator(mode='after')
+    def move_column(self):
+        if self.before_id is not None and self.after_id is not None and self.before_id == self.after_id:
+            raise ValueError('before_id и after_id не могут совпадать')
+        return self
+
 
 class CardOut(BaseModel):
     id: int
