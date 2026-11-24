@@ -170,3 +170,41 @@
     justify-content: flex-end;
     gap: var(--space-xs);
 }
+
+/* Перетаскивание колонки */
+.board-column__header--draggable {
+    cursor: grab;
+    user-select: none;
+}
+
+.board-column__header--draggable:active {
+    cursor: grabbing;
+}
+
+.board-column--dragging {
+    border-color: var(--color-primary);
+    border-style: dashed;
+    background: var(--color-primary-soft);
+    opacity: 0.45;
+}
+
+.board-column--overlay {
+    max-height: none;
+    border-color: var(--color-primary);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-lift);
+    transform: rotate(2deg);
+    cursor: grabbing;
+}
+
+/* Зона карточек: принимает карточки, даже когда колонка пуста */
+.board-column__cards {
+    min-height: 72px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.board-column__cards--over {
+    background: var(--color-primary-soft);
+    box-shadow: inset 0 0 0 2px var(--color-ring);
+}

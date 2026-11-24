@@ -9,7 +9,7 @@ import {getErrorMessage} from "../../../../Shared/lib/get-error-message.ts";
 import { CardItem } from "../CardItem/CardItem.tsx";
 import {Modal} from "../../../../Shared/ui/Modal/Modal.tsx";
 import {SortableContext, useSortable, verticalListSortingStrategy} from "@dnd-kit/sortable";
-import {getCardDndId, getColumnDndId} from "../../../../Entities/board/lib/dnd-utils.ts";
+import {getCardDndId,getColumnDndId, getDropzoneDndId} from "../../../../Entities/board/lib/dnd-utils.ts";
 import {useDroppable} from "@dnd-kit/core";
 import {CSS} from "@dnd-kit/utilities";
 
@@ -18,11 +18,12 @@ interface BoardColumnProps {
     boardId: number
     canEdit: boolean
     members: Member[]
+    isDropTarget: boolean
     onOpenCard: (cardId: number) => void
-    didDrag:boolean
+    wasJustDragged: () => boolean
 }
 
-export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdit, members, onOpenCard, didDrag}) => {
+export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdit, members, isDropTarget, onOpenCard, wasJustDragged}) => {
     const renameColumn = useRenameColumn(boardId)
     const createCard = useCreateCard(boardId)
     const deleteColumn = useDeleteColumn(boardId)
@@ -90,18 +91,27 @@ export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdi
         deleteColumn.reset()
     }
 
-    const {setNodeRef:setDroppableRef} = useDroppable({id: getColumnDndId(column.id)})
+    const {setNodeRef: setDroppableRef} = useDroppable({
+        id: getDropzoneDndId(column.id),
+        data: {type: 'dropzone', columnId: column.id},
+        disabled: !canEdit
+    })
 
-    const {setNodeRef:setSortableRef , attributes, listeners, transition, transform, isDragging} = useSortable({id:getColumnDndId(column.id), data:{type:'column'}})
+    const {setNodeRef: setSortableRef, attributes, listeners, transition, transform, isDragging} = useSortable({
+        id: getColumnDndId(column.id),
+        data: {type: 'column'},
+        disabled: !canEdit
+    })
     const style = {
-        transform:CSS.Translate.toString(transform),
-        transition:transition,
-        opacity: isDragging ? 0.5 : 1
+        transform: CSS.Translate.toString(transform),
+        transition
     }
 
+    const isHandle = canEdit && !isRenaming
+
     return (
-        <section ref={setSortableRef} style={style} className={isDragging ? 'board-column--dragging' : 'board-column'}>
-            <div {...attributes} {...listeners} className="board-column__header">
+        <section ref={setSortableRef} style={style} className={`board-column${isDragging ? ' board-column--dragging' : ''}`}>
+            <div{...(isHandle ? {...attributes, ...listeners} : {})} className={`board-column__header${isHandle ? ' board-column__header--draggable' : ''}`}>
                 {isRenaming ? (
                     <div className="board-column__rename">
                         <Input
@@ -124,7 +134,7 @@ export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdi
                         <h3 className="board-column__title">{column.title}</h3>
                         <span className="board-column__count">{column.cards.length}</span>
                         {canEdit && (
-                            <div className="board-column__menu" ref={menuRef}>
+                            <div className="board-column__menu" ref={menuRef} onPointerDown={(e) => e.stopPropagation()}>
                                 <button type="button" className="board-column__menu-btn" aria-label="Меню колонки" aria-expanded={isMenuOpen} onClick={() => setIsMenuOpen((open) => !open)}>⋯</button>
                                 {isMenuOpen && (
                                     <div className="board-column__dropdown" role="menu">
@@ -144,11 +154,11 @@ export const BoardColumn: React.FC<BoardColumnProps> = ({column, boardId, canEdi
                 <div className="board-column__error">{getErrorMessage(renameColumn.error)}</div>
             )}
 
-            <div ref={setDroppableRef} className="board-column__cards">
+            <div ref={setDroppableRef} className={`board-column__cards${isDropTarget ? ' board-column__cards--over' : ''}`}>
                 {column.cards.length === 0 && <p className="board-column__empty">Нет карточек</p>}
                 <SortableContext items={column.cards.map((item) => getCardDndId(item.id))} strategy={verticalListSortingStrategy}>
                     {column.cards.map((card) => (
-                        <CardItem didDrag={didDrag} key={card.id} card={card} members={members} onClick={() => onOpenCard(card.id)}/>
+                        <CardItem key={card.id} card={card} members={members} disabled={!canEdit} wasJustDragged={wasJustDragged} onClick={() => onOpenCard(card.id)}/>
                     ))}
                 </SortableContext>
             </div>

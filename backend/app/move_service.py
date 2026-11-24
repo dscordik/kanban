@@ -1,54 +1,31 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
+
 from app.ordering import calculate_position, rebalance_positions
 
-def calculate_new_position(db:Session, items:list, after, before)-> float:
-    prev = None
-    next = None
+
+def _find_neighbor_positions(items: list, after, before) -> tuple[float | None, float | None]:
     if after is not None and before is not None:
-        prev = after.position
-        next = before.position
-    elif after is not None:
-        prev = after.position
-        for item in items:
-            if item.position > after.position:
-                next = item.position
-                break
-    elif before is not None:
-        next = before.position
-        for c in reversed(items):
-            if c.position < before.position:
-                prev = c.position
-                break
-    else:
-        if items:
-            prev = items[-1].position
-    position = calculate_position(prev, next)
+        return after.position, before.position
+    if after is not None:
+        next_pos = next((i.position for i in items if i.position > after.position), None)
+        return after.position, next_pos
+    if before is not None:
+        prev_pos = next((i.position for i in reversed(items) if i.position < before.position), None)
+        return prev_pos, before.position
+    return (items[-1].position if items else None), None
+
+
+def calculate_new_position(db: Session, items: list, after, before) -> float:
+    position = calculate_position(*_find_neighbor_positions(items, after, before))
     if position is None:
         rebalance_positions(items)
         db.flush()
-        prev = None
-        next = None
-        if after is not None and before is not None:
-            prev = after.position
-            next = before.position
-        elif after is not None:
-            prev = after.position
-            for item in items:
-                if item.position > after.position:
-                    next = item.position
-                    break
-        elif before is not None:
-            next = before.position
-            for c in reversed(items):
-                if c.position < before.position:
-                    prev = c.position
-                    break
-        else:
-            if items:
-                prev = items[-1].position
-        position = calculate_position(prev, next)
+        position = calculate_position(*_find_neighbor_positions(items, after, before))
         if position is None:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Баг после перебалансировки расчёт вернул None")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="После перебалансировки расчёт позиции не удался"
+            )
     return position

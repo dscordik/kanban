@@ -63,3 +63,39 @@
     display: inline-flex;
     margin-left: auto;
 }
+
+/* Перетаскивание карточки */
+.card-item {
+    cursor: grab;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.card-item:active {
+    cursor: grabbing;
+}
+
+/* Наблюдатель: тащить нельзя, курсор обычный для клика */
+.card-item--readonly,
+.card-item--readonly:active {
+    cursor: pointer;
+}
+
+/* Оригинал на месте, пока тащим копию */
+.card-item--dragging,
+.card-item--dragging:hover {
+    border-color: var(--color-primary);
+    border-style: dashed;
+    background: var(--color-primary-soft);
+    box-shadow: none;
+    opacity: 0.4;
+}
+
+/* Призрак под курсором */
+.card-item--overlay,
+.card-item--overlay:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-lift);
+    transform: rotate(3deg);
+    cursor: grabbing;
+}

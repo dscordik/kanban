@@ -48,29 +48,29 @@ def delete_column(column_id:int, member_and_column:tuple[BoardMember, Column] = 
         db.commit()
 
 @router.post('/columns/{column_id}/move', status_code=status.HTTP_200_OK)
-def move_column(column_id:int, body:MoveColumn, member_and_column:tuple[BoardMember, Column] = Depends(require_column_role('editor')), db:Session = Depends(get_db)):
+def _load_column_neighbor(db: Session, neighbor_id: int | None, column: Column) -> Column | None:
+    if neighbor_id is None:
+        return None
+    if neighbor_id == column.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Нельзя указать перемещаемый элемент соседом')
+    neighbor = db.query(Column).filter(Column.id == neighbor_id, Column.board_id == column.board_id).first()
+    if neighbor is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Колонка не найдена')
+    return neighbor
+
+
+@router.post('/columns/{column_id}/move', response_model=ColumnOut)
+def move_column(column_id: int, body: MoveColumn, member_and_column: tuple[BoardMember, Column] = Depends(require_column_role('editor')), db: Session = Depends(get_db)):
     _, column = member_and_column
-    locked_column = db.query(Board).filter(Board.id == column.board_id).with_for_update().first()
-    after = None
-    before = None
-    if body.after_id is not None:
-        after = db.query(Column).filter(Column.id == body.after_id).first()
-        if not after or after.board_id != column.board_id:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Колонка не найдена')
-        if after.id == column_id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail='Нельзя указать перемещенный объект')
-    if body.before_id is not None:
-        before = db.query(Column).filter(Column.id == body.before_id).first()
-        if not before or before.board_id != column.board_id:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Колонка не найдена')
-        if before.id == column_id:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail='Нельзя указать перемещенный объект')
-    if body.after_id is not None and body.before_id is not None:
-        if after.position >= before.position:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Порядок изменился. Обновите страницу")
-    columns = db.query(Column).filter(Column.board_id == column.board_id, Column.id != column_id).order_by(Column.position,Column.id).all()
-    new_position = calculate_new_position(db, columns, after, before)
-    column.position = new_position
+    db.query(Board).filter(Board.id == column.board_id).with_for_update().first()
+
+    after = _load_column_neighbor(db, body.after_id, column)
+    before = _load_column_neighbor(db, body.before_id, column)
+    if after is not None and before is not None and after.position >= before.position:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Порядок изменился. Обновите страницу')
+
+    columns = db.query(Column).filter(Column.board_id == column.board_id, Column.id != column.id).order_by(Column.position, Column.id).all()
+    column.position = calculate_new_position(db, columns, after, before)
     db.commit()
     db.refresh(column)
     return column

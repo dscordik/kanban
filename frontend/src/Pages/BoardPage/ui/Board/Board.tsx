@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useEffect, useState} from "react";
+import {useRef, useState} from "react";
 import "./Board.css";
 import {useBoardMembers} from "../../../../Entities/board-member";
 import {Spinner} from "../../../../Shared/ui/Spinner/Spinner.tsx";
@@ -8,24 +8,56 @@ import {BoardColumn} from "../BoardColumn/BoardColumn.tsx";
 import {Input} from "../../../../Shared/ui/Input/Input.tsx";
 import {Button} from "../../../../Shared/ui/Button/Button.tsx";
 import {EditCardModal} from "../../../../Features/edit-card";
-import {getNeighbors, useBoardContent, useCreateColumn, useDeleteCard, useUpdateCard} from "../../../../Entities/board";
 import {
+    getNeighbors,
+    useBoardContent,
+    useCreateColumn,
+    useDeleteCard,
+    useUpdateCard,
+    type ColumnWithCards
+} from "../../../../Entities/board";
+import {
+    closestCorners,
     DndContext,
+    DragOverlay,
     PointerSensor,
     TouchSensor,
     useSensor,
     useSensors,
-    closestCorners,
-    type DragStartEvent, type DragOverEvent, type DragEndEvent, DragOverlay
+    type CollisionDetection,
+    type DragEndEvent,
+    type DragOverEvent,
+    type DragStartEvent
 } from "@dnd-kit/core";
-import {getCardDndId, getColumnDndId, parseDndId} from "../../../../Entities/board/lib/dnd-utils.ts";
+import {arrayMove, horizontalListSortingStrategy, SortableContext} from "@dnd-kit/sortable";
+import {getColumnDndId, parseDndId} from "../../../../Entities/board/lib/dnd-utils.ts";
 import {useMoveCard} from "../../../../Entities/board/model/use-move-card.ts";
-import {horizontalListSortingStrategy, SortableContext} from "@dnd-kit/sortable";
 import {useMoveColumn} from "../../../../Entities/board/model/use-move-column.ts";
+import {CardContent} from "../CardItem/CardItem.tsx";
 
 interface BoardProps {
     boardId: number
     canEdit: boolean
+}
+
+const findColumnByCard = (columns: ColumnWithCards[], cardId: number) =>
+    columns.find((column) => column.cards.some((card) => card.id === cardId))
+
+const findTargetColumn = (columns: ColumnWithCards[], overId: string) => {
+    const over = parseDndId(overId)
+    return over.type === 'card'
+        ? findColumnByCard(columns, over.id)
+        : columns.find((column) => column.id === over.id)
+}
+
+const collisionDetection: CollisionDetection = (args) => {
+    const isColumn = args.active.data.current?.type === 'column'
+    return closestCorners({
+        ...args,
+        droppableContainers: args.droppableContainers.filter(
+            (container) => (container.data.current?.type === 'column') === isColumn
+        )
+    })
 }
 
 export const Board: React.FC<BoardProps> = ({boardId, canEdit}) => {
@@ -39,19 +71,20 @@ export const Board: React.FC<BoardProps> = ({boardId, canEdit}) => {
     const [isAddingColumn, setIsAddingColumn] = useState(false)
     const [newColumnTitle, setNewColumnTitle] = useState('')
 
-    const sensor = useSensors(useSensor(PointerSensor, {activationConstraint: {distance:6}}), useSensor(TouchSensor, {activationConstraint:{delay:200, tolerance:5}}))
     const [activeId, setActiveId] = useState<string | null>(null)
-    const [_overId, setOverId] = useState<string | null>(null)
-    const [localColumns, setLocalColumns] = useState(content?.columns ?? [])
-    const [didDrag, setDidDrag] = useState(false)
-    const moveCard = useMoveCard(boardId)
-    const moveColumn = useMoveColumn(boardId)
+    const [overColumnId, setOverColumnId] = useState<number | null>(null)
+    const [localColumns, setLocalColumns] = useState<ColumnWithCards[]>([])
+    const [moveError, setMoveError] = useState<string | null>(null)
+    const justDraggedRef = useRef(false)
 
-    useEffect(() => {
-        if (content?.columns !== localColumns && activeId === null) {
-            setLocalColumns(content!.columns)
-        }
-    }, [content?.columns, activeId]);
+    const handleMoveError = (err: unknown) => setMoveError(getErrorMessage(err))
+    const moveCard = useMoveCard(boardId, handleMoveError)
+    const moveColumn = useMoveColumn(boardId, handleMoveError)
+
+    const pointerSensor = useSensor(PointerSensor, {activationConstraint: {distance: 6}})
+    const touchSensor = useSensor(TouchSensor, {activationConstraint: {delay: 200, tolerance: 5}})
+    // у наблюдателя датчиков нет вообще
+    const sensors = useSensors(...(canEdit ? [pointerSensor, touchSensor] : []))
 
     if (isLoading) {
         return <Spinner text="Загрузка содержимого..."/>
@@ -63,7 +96,16 @@ export const Board: React.FC<BoardProps> = ({boardId, canEdit}) => {
         return null
     }
 
+    const columns = activeId !== null ? localColumns : content.columns
     const editingCard = content.columns.flatMap((column) => column.cards).find((card) => card.id === editingCardId) ?? null
+
+    const active = activeId ? parseDndId(activeId) : null
+    const activeCard = active?.type === 'card'
+        ? columns.flatMap((column) => column.cards).find((card) => card.id === active.id)
+        : undefined
+    const activeColumn = active?.type === 'column'
+        ? columns.find((column) => column.id === active.id)
+        : undefined
 
     const submitColumn = () => {
         const title = newColumnTitle.trim()
@@ -88,167 +130,158 @@ export const Board: React.FC<BoardProps> = ({boardId, canEdit}) => {
         deleteCard.reset()
     }
 
+    const finishDrag = () => {
+        setActiveId(null)
+        setOverColumnId(null)
+        justDraggedRef.current = true
+        setTimeout(() => {
+            justDraggedRef.current = false
+        }, 0)
+    }
+
     const handleDragStart = (event: DragStartEvent) => {
-        setActiveId(String(event.active.id))
+        setMoveError(null)
         setLocalColumns(content.columns)
+        setActiveId(String(event.active.id))
     }
 
-    const handleDragOver = (event: DragOverEvent) => {
-        if (!event.over) {
+    const handleDragOver = ({active: dragActive, over}: DragOverEvent) => {
+        if (!over) {
+            setOverColumnId(null)
             return
         }
-        setOverId(String(event.over.id) ?? null)
-        if (event.over.id === activeId) {
-            return
-        }
-        const parsedId = parseDndId(activeId!)
-        const overParsed = parseDndId(String(event.over.id))
-        if (parsedId.type === 'card') {
-            const fromColumn = localColumns.find((item) => item.cards.some((item) => item.id === parsedId.id))
-            if (!fromColumn) {
-                return
-            }
-            let toColumn = null
-            if (overParsed.type === 'column') {
-                toColumn = localColumns.find((item) => item.id === overParsed.id)
-            } else if (overParsed.type === 'card') {
-                toColumn = localColumns.find((item) => item.cards.some((item) => item.id === overParsed.id))
-            }
-            if (!toColumn) {
-                return
-            }
-            if (fromColumn.id !== toColumn.id) {
-                const card = fromColumn.cards.find((item) => item.id === parsedId.id)
-                if (!card) return
-                const newFromCards = fromColumn.cards.filter((item) => item.id !== parsedId.id)
-                let insertIndex = 0
-                if (overParsed.type === 'column') {
-                    insertIndex = toColumn.cards.length
-                } else if (overParsed.type === 'card') {
-                    const overIndex = toColumn.cards.findIndex((item) => item.id === overParsed.id)
-                    insertIndex = overIndex >= 0 ? overIndex : toColumn.cards.length
-                }
-                const newToCards = [...toColumn.cards]
-                newToCards.splice(insertIndex, 0, card)
-                const newFromColumn = { ...fromColumn, cards: newFromCards }
-                const newToColumn = { ...toColumn, cards: newToCards }
-                const newColumns = localColumns.map((item) => {
-                    if (item.id === fromColumn.id) return newFromColumn
-                    if (item.id === toColumn.id) return newToColumn
-                    return item
-                })
-                setLocalColumns(newColumns)
-            }
-        }
-    }
+        const dragged = parseDndId(String(dragActive.id))
+        if (dragged.type !== 'card') return
+        const overParsed = parseDndId(String(over.id))
 
-    const handleDragEnd = (event: DragEndEvent) => {
-        if (!event.over) {
-            setActiveId(null)
-            setOverId(null)
-            return
-        }
-        if (event.over.id === activeId) {
-            setActiveId(null)
-            setOverId(null)
-            return
-        }
-        const activeParsed = parseDndId(activeId!)
-        const overParsed = parseDndId(String(event.over.id))
-        if (activeParsed.type === 'card') {
-            let toColumn = null
-            if (overParsed.type === 'column') {
-                toColumn = localColumns.find((item) => item.id === overParsed.id)
-            } else if (overParsed.type === 'card') {
-                toColumn = localColumns.find((item) => item.cards.some((item) => item.id === overParsed.id))
-            }
-            if (!toColumn) {
-                setActiveId(null)
-                setOverId(null)
-                return
-            }
-            let toIndex = 0
-            if (overParsed.type === 'column') {
-                toIndex = toColumn.cards.length
-            } else if (overParsed.type === 'card') {
+        setOverColumnId(findTargetColumn(localColumns, String(over.id))?.id ?? null)
+
+        setLocalColumns((prev) => {
+            const toColumn = findTargetColumn(prev, String(over.id))
+            const fromColumn = findColumnByCard(prev, dragged.id)
+            if (!toColumn || !fromColumn || toColumn.id === fromColumn.id) return prev
+
+            const card = fromColumn.cards.find((item) => item.id === dragged.id)
+            if (!card) return prev
+
+            let insertIndex = toColumn.cards.length
+            if (overParsed.type === 'card') {
                 const overIndex = toColumn.cards.findIndex((item) => item.id === overParsed.id)
-                toIndex = overIndex >= 0 ? overIndex : toColumn.cards.length
+                if (overIndex >= 0) insertIndex = overIndex
             }
-            const cardIds = toColumn.cards.map((item) => getCardDndId(item.id))
-            const { afterId, beforeId } = getNeighbors(cardIds, toIndex)
-            const afterIdNumber = afterId ? parseDndId(afterId).id : null
-            const beforeIdNumber = beforeId ? parseDndId(beforeId).id : null
-            moveCard.mutate({
-                cardId: activeParsed.id,
-                payload: {
-                    column_id: toColumn.id,
-                    after_id: afterIdNumber,
-                    before_id: beforeIdNumber
-                },
-                toIndex
+
+            return prev.map((column) => {
+                if (column.id === fromColumn.id) {
+                    return {...column, cards: column.cards.filter((item) => item.id !== dragged.id)}
+                }
+                if (column.id === toColumn.id) {
+                    const cards = [...column.cards]
+                    cards.splice(insertIndex, 0, card)
+                    return {...column, cards}
+                }
+                return column
             })
-        } else if (activeParsed.type === 'column') {
-            const indexC = localColumns.findIndex((item) => getColumnDndId(item.id) === String(event.over?.id))
-            let toIndex = 0
-            if (indexC >= 0) {
-                toIndex = indexC
-            } else if (indexC === -1) {
-                toIndex = localColumns.length
-                setActiveId(null)
-                setOverId(null)
-                return
-            }
-            const columnIds = localColumns.map((item) => getColumnDndId(item.id))
-            const {afterId, beforeId} = getNeighbors(columnIds, toIndex)
-            const afterIdNumber = afterId ? parseDndId(afterId).id : null
-            const beforeIdNumber = beforeId ? parseDndId(beforeId).id : null
-            moveColumn.mutate({
-                columnId:activeParsed.id,
-                payload: {
-                    after_id:afterIdNumber,
-                    before_id:beforeIdNumber
-                },
-                toIndex
-            })
-        }
-        setActiveId(null)
-        setOverId(null)
-        setDidDrag(true)
-        setTimeout(() => setDidDrag(false), 0)
+        })
     }
 
-    const handleDragCancel = () => {
-        setActiveId(null)
-        setOverId(null)
+    const handleDragEnd = ({active: dragActive, over}: DragEndEvent) => {
+        finishDrag()
+        if (!over) return
+
+        const dragged = parseDndId(String(dragActive.id))
+        const overParsed = parseDndId(String(over.id))
+
+        if (dragged.type === 'card') {
+            const toColumn = findTargetColumn(localColumns, String(over.id))
+            if (!toColumn) return
+            let ids = toColumn.cards.map((card) => card.id)
+            const fromIndex = ids.indexOf(dragged.id)
+            if (fromIndex === -1) return
+            if (overParsed.type === 'card' && overParsed.id !== dragged.id) {
+                const overIndex = ids.indexOf(overParsed.id)
+                if (overIndex >= 0) ids = arrayMove(ids, fromIndex, overIndex)
+            }
+            const toIndex = ids.indexOf(dragged.id)
+            const origin = findColumnByCard(content.columns, dragged.id)
+            const originIndex = origin ? origin.cards.findIndex((card) => card.id === dragged.id) : -1
+            if (origin?.id === toColumn.id && originIndex === toIndex) return
+
+            const {afterId, beforeId} = getNeighbors(ids, toIndex)
+            moveCard.mutate({
+                cardId: dragged.id,
+                toIndex,
+                payload: {column_id: toColumn.id, after_id: afterId, before_id: beforeId}
+            })
+            return
+        }
+
+        if (dragged.type === 'column' && overParsed.type === 'column') {
+            let ids = localColumns.map((column) => column.id)
+            const fromIndex = ids.indexOf(dragged.id)
+            const overIndex = ids.indexOf(overParsed.id)
+            if (fromIndex === -1 || overIndex === -1 || fromIndex === overIndex) return
+
+            ids = arrayMove(ids, fromIndex, overIndex)
+            const {afterId, beforeId} = getNeighbors(ids, overIndex)
+            moveColumn.mutate({
+                columnId: dragged.id,
+                toIndex: overIndex,
+                payload: {after_id: afterId, before_id: beforeId}
+            })
+        }
     }
+
+    const handleDragCancel = () => finishDrag()
 
     return (
         <div className="board">
-            <DndContext collisionDetection={closestCorners} sensors={sensor} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-                {localColumns.length === 0 && (
+            {moveError && (
+                <div className="board__notice" role="alert">
+                    <span className="board__notice-text">{moveError}</span>
+                    <button type="button" className="board__notice-close" aria-label="Закрыть" onClick={() => setMoveError(null)}>&times;</button>
+                </div>
+            )}
+
+            <DndContext
+                sensors={sensors}
+                collisionDetection={collisionDetection}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+            >
+                {columns.length === 0 && (
                     <div className="board__empty">
                         {canEdit ? 'Добавьте первую колонку' : 'На доске пока пусто'}
                     </div>
                 )}
 
-                {(localColumns.length > 0 || canEdit) && (
+                {(columns.length > 0 || canEdit) && (
                     <div className="board__columns">
-                        <SortableContext strategy={horizontalListSortingStrategy} items={localColumns.map((item) => getColumnDndId(item.id))}>
-                            {localColumns.map((column) => (
-                                <BoardColumn didDrag={didDrag} key={column.id} column={column} boardId={boardId} canEdit={canEdit} members={members} onOpenCard={setEditingCardId}/>
+                        <SortableContext strategy={horizontalListSortingStrategy} items={columns.map((item) => getColumnDndId(item.id))}>
+                            {columns.map((column) => (
+                                <BoardColumn
+                                    key={column.id}
+                                    column={column}
+                                    boardId={boardId}
+                                    canEdit={canEdit}
+                                    members={members}
+                                    isDropTarget={overColumnId === column.id}
+                                    wasJustDragged={() => justDraggedRef.current}
+                                    onOpenCard={setEditingCardId}
+                                />
                             ))}
                         </SortableContext>
-
 
                         {canEdit && (
                             <div className="board__add-column">
                                 {isAddingColumn ? (
                                     <div className="board__add-form">
                                         <Input autoFocus placeholder="Название колонки" maxLength={100} value={newColumnTitle} onChange={(e) => setNewColumnTitle(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') submitColumn()
-                                                if (e.key === 'Escape') cancelColumn()
-                                            }}
+                                               onKeyDown={(e) => {
+                                                   if (e.key === 'Enter') submitColumn()
+                                                   if (e.key === 'Escape') cancelColumn()
+                                               }}
                                         />
                                         {createColumn.isError && (
                                             <div className="board__add-error">{getErrorMessage(createColumn.error)}</div>
@@ -265,31 +298,21 @@ export const Board: React.FC<BoardProps> = ({boardId, canEdit}) => {
                         )}
                     </div>
                 )}
+
                 <DragOverlay>
-                    {activeId !== null && parseDndId(activeId).type === 'card' && (() => {
-                        const cardId = parseDndId(activeId).id
-                        const card = localColumns.flatMap((item) => item.cards).find((item) => item.id === cardId)
-                        if (!card) {
-                            return null
-                        }
-                        return (
-                            <div className="card-item card-item--overlay">
-                                <span className="card-item__title">{card.title}</span>
+                    {activeCard && (
+                        <div className="card-item card-item--overlay">
+                            <CardContent card={activeCard} members={members}/>
+                        </div>
+                    )}
+                    {activeColumn && (
+                        <div className="board-column board-column--overlay">
+                            <div className="board-column__header">
+                                <h3 className="board-column__title">{activeColumn.title}</h3>
+                                <span className="board-column__count">{activeColumn.cards.length}</span>
                             </div>
-                        )
-                    })()}
-                    {activeId !== null && parseDndId(activeId).type === 'column' && (() => {
-                        const columnId = parseDndId(activeId).id
-                        const column = localColumns.find((item) => item.id === columnId)
-                        if (!column) {
-                            return null
-                        }
-                        return (
-                            <div className="board-column column-item--overlay">
-                                <span className="board-column__title">{column.title}</span>
-                            </div>
-                        )
-                    })()}
+                        </div>
+                    )}
                 </DragOverlay>
             </DndContext>
 
