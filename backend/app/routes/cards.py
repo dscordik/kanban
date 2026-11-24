@@ -69,7 +69,6 @@ def delete_card(card_id:int, member_and_card:tuple[BoardMember, Card] = Depends(
     db.delete(card)
     db.commit()
 
-@router.post('/cards/{card_id}/move')
 def _load_card_neighbor(db: Session, neighbor_id: int | None, card: Card, target_column_id: int) -> Card | None:
     if neighbor_id is None:
         return None

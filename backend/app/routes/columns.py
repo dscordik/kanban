@@ -47,7 +47,6 @@ def delete_column(column_id:int, member_and_column:tuple[BoardMember, Column] = 
         db.delete(column)
         db.commit()
 
-@router.post('/columns/{column_id}/move', status_code=status.HTTP_200_OK)
 def _load_column_neighbor(db: Session, neighbor_id: int | None, column: Column) -> Column | None:
     if neighbor_id is None:
         return None
